@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Titulares del día</title>
+<style>
+  :root {
+    --bg: #f4f1ea; --papel: #fffdf8; --tinta: #1a1916; --suave: #6d6a62; --linea: #e2ddd2;
+    --acento: #b3261e; --chip: #e9e4d8; --ok: #2e8b57;
+    --sombra: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141412; --papel: #1e1d1a; --tinta: #efece5; --suave: #a29e94; --linea: #33312d;
+      --acento: #ff7a6e; --chip: #2a2926; --ok: #6fcf97;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141412; --papel: #1e1d1a; --tinta: #efece5; --suave: #a29e94; --linea: #33312d;
+    --acento: #ff7a6e; --chip: #2a2926; --ok: #6fcf97;
+    --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--tinta); font: 16px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  .envoltura { max-width: 1120px; margin: 0 auto; padding: 0 16px 56px; }
+
+  /* cabecera */
+  .cabecera { border-bottom: 3px double var(--tinta); padding: 28px 0 14px; text-align: center; }
+  .cabecera h1 { font-family: var(--serif); font-size: clamp(2.1rem, 7vw, 3.6rem); margin: 0; letter-spacing: -.01em; line-height: 1.05; }
+  .fecha { font-family: var(--serif); font-style: italic; color: var(--suave); margin-top: 6px; }
+  .estado { display: inline-flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--suave); margin-top: 8px; }
+  .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); animation: latido 2.2s infinite; }
+  @keyframes latido { 0% { box-shadow: 0 0 0 0 rgba(46,139,87,.5); } 70% { box-shadow: 0 0 0 8px rgba(46,139,87,0); } 100% { box-shadow: 0 0 0 0 rgba(46,139,87,0); } }
+  @media (prefers-reduced-motion: reduce) { .punto { animation: none; } .tarjeta { transition: none; } }
+
+  /* filtros por medio */
+  .filtros { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0; scrollbar-width: none;
+             position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--linea); }
+  .filtros::-webkit-scrollbar { display: none; }
+  .filtro { flex: none; border: 1px solid var(--linea); background: var(--papel); color: var(--tinta);
+            border-radius: 999px; padding: 6px 14px; font: inherit; font-size: .85rem; cursor: pointer; }
+  .filtro:hover { border-color: var(--suave); }
+  .filtro[aria-pressed="true"] { background: var(--tinta); color: var(--bg); border-color: var(--tinta); }
+
+  /* títulos de sección */
+  .seccion-titulo { display: flex; align-items: baseline; gap: 12px; margin: 32px 0 16px; flex-wrap: wrap; }
+  .seccion-titulo h2 { font-family: var(--serif); font-size: 1.7rem; margin: 0; }
+  .seccion-titulo span { color: var(--suave); font-size: .85rem; }
+
+  /* foto o sustituto */
+  .foto { display: block; position: relative; background: var(--chip); overflow: hidden; }
+  .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sin-foto { display: flex; align-items: center; justify-content: center; font-family: var(--serif);
+              font-size: 2.6rem; color: rgba(255,255,255,.92); }
+
+  /* historia destacada */
+  .destacada { display: grid; grid-template-columns: 1.25fr 1fr; background: var(--papel); border-radius: 14px;
+               overflow: hidden; box-shadow: var(--sombra); margin-bottom: 20px; }
+  .destacada .foto { min-height: 300px; height: 100%; }
+  .destacada .cuerpo { padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .destacada h3 { font-family: var(--serif); font-size: clamp(1.45rem, 2.8vw, 2.1rem); line-height: 1.15; margin: 0; }
+  @media (max-width: 760px) {
+    .destacada { grid-template-columns: 1fr; }
+    .destacada .foto { min-height: 0; aspect-ratio: 16 / 9; }
+    .destacada .cuerpo { padding: 16px 18px 20px; }
+  }
+
+  /* rejilla de historias */
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+  .tarjeta { background: var(--papel); border-radius: 12px; overflow: hidden; box-shadow: var(--sombra);
+             display: flex; flex-direction: column; transition: transform .15s ease; }
+  .tarjeta:hover { transform: translateY(-2px); }
+  .tarjeta .foto { aspect-ratio: 16 / 9; }
+  .tarjeta .cuerpo { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .tarjeta h3 { font-family: var(--serif); font-size: 1.14rem; line-height: 1.25; margin: 0; }
+  h3 a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+  /* insignias */
+  .insignias { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .medio { font-size: .72rem; font-weight: 600; letter-spacing: .02em; padding: 2px 8px; border-radius: 4px; color: #fff; white-space: nowrap; }
+  .cuenta { font-size: .74rem; font-weight: 700; color: var(--acento); text-transform: uppercase; letter-spacing: .06em; margin-right: 2px; }
+  .meta { font-size: .78rem; color: var(--suave); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  /* cómo lo titula cada medio */
+  .versiones { list-style: none; margin: 4px 0 0; padding: 0; border-top: 1px solid var(--linea); }
+  .versiones li { padding: 8px 0; border-bottom: 1px solid var(--linea); font-size: .9rem; display: flex; gap: 10px; align-items: baseline; }
+  .versiones li:last-child { border-bottom: none; }
+  .versiones li a { color: var(--suave); }
+  .versiones li a:hover { color: var(--tinta); text-decoration: underline; }
+  details.mas summary { cursor: pointer; color: var(--suave); font-size: .82rem; }
+  details.mas summary:hover { color: var(--tinta); }
+
+  /* última hora */
+  .lista { background: var(--papel); border-radius: 12px; box-shadow: var(--sombra); overflow: hidden; }
+  .fila { display: grid; grid-template-columns: 112px 1fr; gap: 14px; padding: 12px 14px; border-bottom: 1px solid var(--linea); align-items: center; }
+  .fila:last-child { border-bottom: none; }
+  .fila .foto { width: 112px; height: 76px; border-radius: 8px; }
+  .fila .sin-foto { font-size: 1.5rem; }
+  .fila h3 { font-family: var(--serif); font-size: 1.04rem; line-height: 1.3; margin: 0 0 6px; }
+  @media (max-width: 480px) {
+    .fila { grid-template-columns: 84px 1fr; gap: 12px; }
+    .fila .foto { width: 84px; height: 64px; }
+  }
+
+  /* estado de las fuentes */
+  details.fuentes { margin-top: 32px; }
+  details.fuentes summary { cursor: pointer; font-family: var(--serif); font-size: 1.15rem; }
+  .rejilla-fuentes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 12px; font-size: .85rem; }
+  .fuente { background: var(--papel); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; gap: 8px; }
+  .fuente .ok { color: var(--ok); }
+  .fuente .error { color: var(--acento); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+
+  .aviso { background: var(--papel); border-left: 4px solid var(--acento); padding: 16px; border-radius: 8px; margin-top: 24px; }
+  .vacio { color: var(--suave); font-style: italic; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--linea); color: var(--suave); font-size: .8rem; text-align: center; }
+</style>
+</head>
+<body>
+<div class="envoltura">
+  <header class="cabecera">
+    <h1>Titulares del día</h1>
+    <div class="fecha" id="fecha"></div>
+    <div class="estado"><span class="punto"></span><span id="actualizado">Cargando…</span></div>
+  </header>
+
+  <nav class="filtros" id="filtros" aria-label="Filtrar por medio"></nav>
+
+  <main id="contenido"></main>
+
+  <footer>
+    Se muestran titulares, imágenes de los feeds y enlaces a cada medio.
+    Los contenidos pertenecen a sus respectivos diarios.
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const REFRESCO_MS = 5 * 60 * 1000;   // vuelve a leer noticias.js cada 5 minutos
+  let datos = null;
+  let filtro = null;                   // null = todos los medios
+
+  const $ = (id) => document.getElementById(id);
+
+  function el(tag, clase, texto) {
+    const e = document.createElement(tag);
+    if (clase) e.className = clase;
+    if (texto != null) e.textContent = texto;
+    return e;
+  }
+
+  // Cada medio tiene siempre el mismo color
+  // Cada medio recibe un color de esta paleta según su posición en la lista de feeds
+  const PALETA = ["#1f5fbf", "#b3261e", "#2e7d4f", "#7b3fa8", "#b35900",
+                  "#0f7c86", "#a3346b", "#5b6b1e", "#6b4a2b", "#3949ab"];
+
+  function colorMedio(nombre) {
+    const lista = datos && datos.feeds ? datos.feeds.map((f) => f.nombre) : [];
+    const i = lista.indexOf(nombre);
+    if (i >= 0) return PALETA[i % PALETA.length];
+    let h = 0;                                         // medio desconocido: color por su nombre
+    for (const c of String(nombre)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return PALETA[h % PALETA.length];
+  }
+
+  // "ElPais" -> "EP", "LaVanguardia" -> "LV", "elDiario" -> "ED"
+  function iniciales(nombre) {
+    const s = String(nombre || "?");
+    const marcas = s.match(/[A-Z0-9]/g) || [];
+    const ini = (s.charAt(0) + marcas.filter((_, i) => i > 0 || !/[A-Z0-9]/.test(s.charAt(0))).join("")).toUpperCase();
+    return ini.slice(0, 2);
+  }
+
+  function haceCuanto(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    const min = Math.round((Date.now() - d) / 60000);
+    if (min < 1) return "ahora mismo";
+    if (min < 60) return "hace " + min + " min";
+    const h = Math.floor(min / 60);
+    if (h < 24) return "hace " + h + " h";
+    return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  }
+
+  function insigniaMedio(nombre) {
+    const s = el("span", "medio", nombre);
+    s.style.background = colorMedio(nombre);
+    return s;
+  }
+
+  function enlace(href, texto) {
+    const a = el("a", null, texto);
+    a.href = href || "#";
+    a.target = "_blank";
+    a.rel = "noopener";
+    return a;
+  }
+
+  // Foto de la noticia; si no hay o no carga, un bloque con la inicial del medio
+  function foto(url, medio, href) {
+    const caja = el("a", "foto");
+    caja.href = href || "#";
+    caja.target = "_blank";
+    caja.rel = "noopener";
+    caja.tabIndex = -1;
+    caja.setAttribute("aria-hidden", "true");
+
+    const sustituto = () => {
+      caja.textContent = iniciales(medio);
+      caja.classList.add("sin-foto");
+      caja.style.background = "linear-gradient(135deg, " + colorMedio(medio) + ", var(--chip))";
+    };
+
+    if (url) {
+      const img = document.createElement("img");
+      img.alt = "";
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.referrerPolicy = "no-referrer";   // algunos medios bloquean imágenes enlazadas desde otros sitios
+      img.onerror = sustituto;
+      img.src = url;
+      caja.appendChild(img);
+    } else {
+      sustituto();
+    }
+    return caja;
+  }
+
+  function tituloSeccion(texto, sub) {
+    const d = el("div", "seccion-titulo");
+    d.appendChild(el("h2", null, texto));
+    if (sub) d.appendChild(el("span", null, sub));
+    return d;
+  }
+
+  const pasaFiltro = (medios) => !filtro || medios.includes(filtro);
+
+  // ---------- 1. Lo más cubierto ----------
+
+  function tarjetaHistoria(h, destacada) {
+    const versiones = h.versiones || [];
+    const medios = [...new Set(versiones.map((v) => v.fuente))];
+    const art = el("article", destacada ? "destacada" : "tarjeta");
+
+    art.appendChild(foto(h.imagen, medios[0], h.enlace));
+
+    const cuerpo = el("div", "cuerpo");
+    const insignias = el("div", "insignias");
+    if (h.numFuentes > 1) insignias.appendChild(el("span", "cuenta", h.numFuentes + " medios"));
+    medios.forEach((m) => insignias.appendChild(insigniaMedio(m)));
+    cuerpo.appendChild(insignias);
+
+    const titulo = el("h3");
+    titulo.appendChild(enlace(h.enlace, h.titulo));
+    cuerpo.appendChild(titulo);
+
+    if (h.fecha) cuerpo.appendChild(el("div", "meta", haceCuanto(h.fecha)));
+
+    if (versiones.length > 1) {
+      const ul = el("ul", "versiones");
+      versiones.forEach((v) => {
+        const li = el("li");
+        li.appendChild(insigniaMedio(v.fuente));
+        li.appendChild(enlace(v.enlace, v.titulo));
+        ul.appendChild(li);
+      });
+      if (destacada) {
+        cuerpo.appendChild(ul);
+      } else {
+        const det = el("details", "mas");
+        det.appendChild(el("summary", null, "Cómo lo titula cada medio"));
+        det.appendChild(ul);
+        cuerpo.appendChild(det);
+      }
+    }
+    art.appendChild(cuerpo);
+    return art;
+  }
+
+  function pintarHistorias(cont) {
+    const lista = (datos.historias || []).filter((h) =>
+      pasaFiltro((h.versiones || []).map((v) => v.fuente)));
+    cont.appendChild(tituloSeccion("Lo más cubierto", "historias publicadas por varios medios"));
+    if (!lista.length) {
+      cont.appendChild(el("p", "vacio", "No hay historias de este medio ahora mismo."));
+      return;
+    }
+    const [primera, ...resto] = lista;
+    cont.appendChild(tarjetaHistoria(primera, true));
+    const rejilla = el("div", "rejilla");
+    resto.forEach((h) => rejilla.appendChild(tarjetaHistoria(h, false)));
+    cont.appendChild(rejilla);
+  }
+
+  // ---------- 2. Última hora ----------
+
+  function pintarUltimaHora(cont) {
+    const lista = (datos.ultimaHora || []).filter((n) => pasaFiltro([n.fuente]));
+    cont.appendChild(tituloSeccion("Última hora", "lo más reciente de cada medio"));
+    if (!lista.length) {
+      cont.appendChild(el("p", "vacio", "No hay titulares recientes de este medio."));
+      return;
+    }
+    const caja = el("div", "lista");
+    lista.forEach((n) => {
+      const fila = el("article", "fila");
+      fila.appendChild(foto(n.imagen, n.fuente, n.enlace));
+      const texto = el("div");
+      const titulo = el("h3");
+      titulo.appendChild(enlace(n.enlace, n.titulo));
+      texto.appendChild(titulo);
+      const meta = el("div", "meta");
+      meta.appendChild(insigniaMedio(n.fuente));
+      meta.appendChild(el("span", null, haceCuanto(n.fecha)));
+      texto.appendChild(meta);
+      fila.appendChild(texto);
+      caja.appendChild(fila);
+    });
+    cont.appendChild(caja);
+  }
+
+  // ---------- 3. Estado de las fuentes ----------
+
+  function pintarFuentes(cont) {
+    const det = el("details", "fuentes");
+    const feeds = datos.feeds || [];
+    const conError = feeds.filter((f) => f.error).length;
+    det.appendChild(el("summary", null,
+      "Fuentes (" + feeds.length + ")" + (conError ? " · " + conError + " con error" : "")));
+    const rejilla = el("div", "rejilla-fuentes");
+    feeds.forEach((f) => {
+      const fila = el("div", "fuente");
+      fila.appendChild(el("span", null, f.nombre));
+      if (f.error) {
+        const e = el("span", "error", "error");
+        e.title = f.error;
+        fila.appendChild(e);
+      } else {
+        fila.appendChild(el("span", "ok", f.titulares + " titulares"));
+      }
+      rejilla.appendChild(fila);
+    });
+    det.appendChild(rejilla);
+    cont.appendChild(det);
+  }
+
+  // ---------- filtros y pintado general ----------
+
+  function pintarFiltros() {
+    const nav = $("filtros");
+    nav.textContent = "";
+    const medios = (datos.feeds || []).filter((f) => !f.error && f.titulares > 0).map((f) => f.nombre);
+    if (filtro && !medios.includes(filtro)) filtro = null;
+    [null, ...medios].forEach((m) => {
+      const b = el("button", "filtro", m || "Todos");
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(filtro === m));
+      b.addEventListener("click", () => { filtro = m; pintar(); });
+      nav.appendChild(b);
+    });
+  }
+
+  function pintarEstado() {
+    const hoy = new Date().toLocaleDateString("es-ES",
+      { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    $("fecha").textContent = hoy.charAt(0).toUpperCase() + hoy.slice(1);
+    $("actualizado").textContent = "Actualizado " + haceCuanto(datos.actualizado);
+  }
+
+  function pintar() {
+    pintarEstado();
+    pintarFiltros();
+    const cont = $("contenido");
+    cont.textContent = "";
+    pintarHistorias(cont);
+    pintarUltimaHora(cont);
+    pintarFuentes(cont);
+  }
+
+  function sinDatos() {
+    $("actualizado").textContent = "Sin datos";
+    const cont = $("contenido");
+    cont.textContent = "";
+    cont.appendChild(el("div", "aviso",
+      "No se encontró noticias.js. Ejecuta LectorRSS en la misma carpeta que esta página."));
+  }
+
+  // Carga noticias.js sin caché; solo vuelve a pintar si los datos cambiaron
+  function cargar() {
+    const s = document.createElement("script");
+    s.src = "noticias.js?t=" + Date.now();
+    s.onload = () => {
+      s.remove();
+      const nuevos = window.NOTICIAS;
+      if (!nuevos) { if (!datos) sinDatos(); return; }
+      if (!datos || nuevos.actualizado !== datos.actualizado) {
+        datos = nuevos;
+        pintar();
+      }
+    };
+    s.onerror = () => { s.remove(); if (!datos) sinDatos(); };
+    document.head.appendChild(s);
+  }
+
+  cargar();
+  setInterval(cargar, REFRESCO_MS);
+  setInterval(() => { if (datos) pintarEstado(); }, 60 * 1000);   // "hace X min" sigue al día
+})();
+</script>
+</body>
+</html>
