@@ -1,0 +1,9 @@
+Estructura del repositorio:
+
+  index.html                         la página que ve la jornalista
+  LectorRSS.java                     el programa que lee los feeds
+  config.properties                  lista de periódicos
+  .github/workflows/actualizar.yml   agenda la actualización cada 30 min
+
+Tras subir todo, active Settings > Pages (rama main, carpeta raíz)
+y ejecute el workflow una vez en la pestaña Actions.
